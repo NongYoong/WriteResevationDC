@@ -1,0 +1,146 @@
+import requests
+from bs4 import BeautifulSoup
+import re
+
+dat = 2
+
+def gall(url, onefile, mode):
+    headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36'
+    }
+
+    response = requests.get(url, headers=headers)
+    html = response.text
+    soup = BeautifulSoup(html, 'html.parser')
+
+    title = soup.find("title")
+    if title is None:
+        print("주소가 잘못된 것 같아요! (*'^' *)\n")
+        return 1
+
+    title = title.text[:-11]
+    if mode == '2':
+        filename = title
+        filename = re.sub("[\/:*?\"<>|]", "", filename)
+        f = open(filename + ".txt", "w", encoding="UTF8")
+    else:
+        filename = onefile
+        f = open(filename + ".txt", "a", encoding="UTF8")
+
+    f.write(title + "\n-------------------------------------------\n\n")
+
+    contents = soup.find("div", {"style": "overflow:hidden;"})
+    if contents is None:
+        print("주소가 잘못된 것 같아요! (*'^' *)\n")
+        return 1
+
+    AppOrCom = contents.find("div", {"app_paragraph": "Dc_App_text_0"})
+
+    brs = contents.find_all("br")
+    for br in brs:
+        br.replace_with("\n")
+
+    ps = contents.find_all("p")
+    for p in ps:
+        p.replace_with(p.text + "\n")
+
+    divs = contents.find_all("div")
+    for div in divs:
+        div.replace_with(div.text + "\n")
+
+    f.write(contents.text)
+    f.write("\n")
+    print("완성~ (*'0' *)\n")
+
+    f.close()
+    return 0
+
+while True:
+    url = input("URL : ")
+
+    if url == '0':
+        print("잘가,,, (*'-' *)")
+        exit(0)
+
+    if url[len(url)-1]=='/':
+        url = url[:-1]
+
+    if "vega_note" in url or "lsh4710711" in url:
+        print("네이버 블로그 링크인 것 같아요!\n* 파일을 하나로 저장하기 -> 1 입력\n* 파일을 따로 저장하기   -> 2 입력 : ", end="")
+        filejujang='3'
+        while True:
+            filejujang=input()
+            if filejujang=='1' or filejujang=='2':
+                break;
+            print("다시 입력해 : ", end="")
+
+        onefilename = ""
+        if filejujang == '1':
+            onefilename = input("저장할 파일 이름을 적어주세요 ! : ")
+            f = open(onefilename + ".txt", "w", encoding="UTF8")
+            f.write(onefilename + "\n=============================\n")
+            f.close
+
+        splitedURL = url.split("/")
+        url = "https://blog.naver.com/PostView.nhn?blogId=" + splitedURL[3] +"&logNo=" + splitedURL[4]
+
+        headers = {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers)
+        html = response.text
+        soup = BeautifulSoup(html, 'html.parser')
+
+        postView = soup.find("div", {"id" : "postViewArea"})
+        if postView is None:
+            postView = soup.find_all("div", {"class" : "se-module se-module-text"})
+            for post in postView:
+                links = post.find_all("a")
+                for link in links:
+                    print(link.get("href") + " 으로 텍본 만드는 중 !!")
+                    gall(link.get("href"), onefilename, filejujang)
+
+        else:
+            links = postView.find_all("a")
+            for link in links:
+                print(link.get("href") + " 으로 텍본 만드는 중 !!")
+                gall(link.get("href"), onefilename, filejujang)
+
+    elif "sulgal" in url:
+        print("티스토리 블로그 링크인 것 같아요!\n* 파일을 하나로 저장하기 -> 1 입력\n* 파일을 따로 저장하기   -> 2 입력 : ", end="")
+        filejujang = '3'
+        while True:
+            filejujang = input()
+            if filejujang == '1' or filejujang == '2':
+                break;
+            print("다시 입력해 : ", end="")
+        onefilename = ""
+        if filejujang == '1':
+            onefilename = input("저장할 파일 이름을 적어주세요 ! : ")
+            f = open(onefilename + ".txt", "w", encoding="UTF8")
+            f.write(onefilename + "\n=============================\n")
+            f.close
+        headers = {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers)
+        html = response.text
+        soup = BeautifulSoup(html, 'html.parser')
+
+        postView = soup.find("div", {"class": "tt_article_useless_p_margin"})
+        ps = postView.find_all("p")
+        for p in ps:
+            print(p.find("a").get("href") + " 으로 텍본 만드는 중 !!")
+            gall(p.find("a").get("href"), onefilename, filejujang)
+
+    else:
+        if 'com/snowpiercer2013/' in url:
+            splitedURL = url.split('/')
+            url = 'https://gall.dcinside.com/board/view/?id=snowpiercer2013&no=' + splitedURL[4]
+
+        url = url + "&page"
+
+        gall(url, "none", "2")
